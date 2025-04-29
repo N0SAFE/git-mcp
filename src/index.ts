@@ -199,6 +199,9 @@ class GitToolsMcpServer extends McpServer {
       capabilities: {
         tools: gitTools
       },
+      dynamicToolDiscovery: {
+        enabled: true,
+      }
     });
   }
 }

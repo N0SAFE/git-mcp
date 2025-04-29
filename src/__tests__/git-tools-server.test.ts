@@ -5,7 +5,7 @@ import { execSync } from 'child_process';
 
 // Import the tool definitions from the server file
 import * as path from 'path';
-import * as gitToolsServer from '../sample/git-tools-server';
+import * as gitToolsServer from '../index';
 
 const serverPath = path.resolve(__dirname, '../sample/git-tools-server');
 

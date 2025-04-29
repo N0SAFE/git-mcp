@@ -22,8 +22,18 @@ export class ToolManager {
     this.toolsetConfig = toolsetConfig;
     toolsCapabilities.forEach((capability) => {
       this.tools.set(capability.definition.name, capability);
-      this.enabledTools.add(capability.definition.name);
     });
+    if (dynamicToolDiscovery?.enabled) {
+      dynamicToolDiscovery.defaultEnabledToolsets?.forEach((toolName) => {
+        if (this.tools.has(toolName)) {
+          this.enabledTools.add(toolName);
+        }
+      })
+    } else {
+      this.tools.forEach((tool) => {
+        this.enabledTools.add(tool.definition.name);
+      });
+    }
     // Dynamic tool discovery logic
     if (dynamicToolDiscovery?.enabled) {
       // Tool to list available/enabled tools
@@ -69,7 +79,8 @@ export class ToolManager {
                   .string()
                   .refine(
                     (name) =>
-                      dynamicToolDiscovery.availableToolsets.includes(name),
+                      this.tools.has(name) &&
+                      this.tools.get(name)?.definition.name === name,
                     {
                       message: "Invalid toolset name",
                     }
@@ -113,14 +124,6 @@ export class ToolManager {
         },
       });
       this.enabledTools.add("dynamic_tool_trigger");
-      // Optionally enable default toolsets
-      if (dynamicToolDiscovery.defaultEnabledToolsets) {
-        for (const toolName of dynamicToolDiscovery.defaultEnabledToolsets) {
-          if (this.tools.get(toolName)) {
-            this.enabledTools.add(toolName);
-          }
-        }
-      }
     }
     console.log(
       `ToolManager initialized with ${Array.from(this.tools).length} tools`
