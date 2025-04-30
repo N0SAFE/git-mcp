@@ -30,16 +30,18 @@ export class McpServer {
     capabilities,
     toolsetConfig,
     dynamicToolDiscovery,
+    instructions,
   }: {
     name: string;
     version: string;
-    capabilities?:
-      | { tools?: ToolCapability[]; resources?: any; prompts?: any }
+    capabilities?: { tools?: ToolCapability[]; resources?: any; prompts?: any };
     toolsetConfig: ToolsetConfig;
     dynamicToolDiscovery?: DynamicToolDiscoveryOptions;
+    instructions?: string;
   }) {
     this.toolsetConfig = toolsetConfig;
     this.toolManager = new ToolManager(
+      name,
       capabilities?.tools || [],
       toolsetConfig,
       dynamicToolDiscovery
@@ -66,13 +68,11 @@ export class McpServer {
           ...(hasTools ? { tools: {} } : {}),
           ...(hasResources ? { resources: {} } : {}),
           ...(hasPrompts ? { prompts: {} } : {}),
+          logging: {}
         },
+        instructions,
       }
     );
-    console.log({
-      hasTools,
-      listTools: this.toolManager.listTools()
-    })
     // Register handlers
     if (hasTools) {
       this._server.setRequestHandler(
@@ -82,6 +82,9 @@ export class McpServer {
       this._server.setRequestHandler(
         CallToolRequestSchema,
         this.toolManager.callTool.bind(this.toolManager)
+      );
+      this.toolManager.onEnabledToolsChanged(
+        this._server.sendToolListChanged.bind(this._server)
       );
     }
 
@@ -108,6 +111,9 @@ export class McpServer {
     // Error handling
     this._server.onerror = (error) => console.error("[MCP Error]", error);
     process.on("SIGINT", async () => {
+      this.toolManager.offEnabledToolsChanged(
+        this._server.sendToolListChanged.bind(this._server)
+      );
       await this._server.close();
       process.exit(0);
     });
